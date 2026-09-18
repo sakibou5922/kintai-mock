@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>勤怠モック</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F3F5F7; --panel:#FFFFFF; --ink:#1C2733; --muted:#6B7683; --line:#DCE1E6;
+  --work:#1F7A5A; --work-soft:#E3F2EA; --break:#B86E00; --break-soft:#FBEFD9;
+  --off:#5A6673; --off-soft:#E9ECEF; --danger:#B3261E; --danger-soft:#F9E4E2;
+  --btn:#1C2733; --btn-ink:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111820; --panel:#1A232D; --ink:#EDF1F4; --muted:#98A3AE; --line:#2C3843;
+    --work:#4FC08F; --work-soft:#173428; --break:#E9A23B; --break-soft:#3A2A10;
+    --off:#A5B0BA; --off-soft:#242F3A; --danger:#F08A82; --danger-soft:#3E1F1D;
+    --btn:#EDF1F4; --btn-ink:#111820;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111820; --panel:#1A232D; --ink:#EDF1F4; --muted:#98A3AE; --line:#2C3843;
+  --work:#4FC08F; --work-soft:#173428; --break:#E9A23B; --break-soft:#3A2A10;
+  --off:#A5B0BA; --off-soft:#242F3A; --danger:#F08A82; --danger-soft:#3E1F1D;
+  --btn:#EDF1F4; --btn-ink:#111820;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 6px}
+header h1{font-size:15px;font-weight:700;margin:0;letter-spacing:.02em}
+header .sub{font-size:12px;color:var(--muted)}
+select,input,textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+select.user{width:auto;max-width:56vw}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:10px 14px;font-weight:500}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--work);outline-offset:2px}
+button.primary{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+button.small{padding:6px 10px;font-size:13px;border-radius:8px}
+button:disabled{opacity:.4;cursor:default}
+.hero{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px 20px}
+.hero .date{color:var(--muted);font-size:14px}
+.hero .clock{font-size:64px;font-weight:700;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:4px 0 10px}
+.hero .clock small{font-size:28px;font-weight:500;color:var(--muted);margin-left:4px}
+.status{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:14px}
+.status.work{background:var(--work-soft);color:var(--work)}
+.status.break{background:var(--break-soft);color:var(--break)}
+.status.off{background:var(--off-soft);color:var(--off)}
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.actions button{flex:1 1 140px;padding:16px 12px;font-size:17px;font-weight:700;border-radius:12px}
+.actions .done{color:var(--muted);font-size:14px}
+section{margin-top:22px}
+section h2{font-size:14px;font-weight:700;margin:0 0 8px;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0;padding-top:0}
+.row .t{font-variant-numeric:tabular-nums;color:var(--muted);min-width:5.5em}
+.row .type{font-weight:500}
+.row .src{font-size:12px;color:var(--muted)}
+.empty{color:var(--muted);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{padding:2px 0}
+.stat .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:12px;color:var(--muted)}
+.field{margin-top:10px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.tabs{display:flex;gap:6px;margin-top:14px}
+.tabs button{flex:1;padding:8px 6px;font-size:14px}
+.tabs button[aria-selected="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 6px;border-top:1px solid var(--line);white-space:nowrap}
+th{border-top:0;color:var(--muted);font-weight:500;font-size:12px}
+td.num,th.num{text-align:right}
+.scroll{overflow-x:auto;max-width:100%}
+.warn{color:var(--danger);font-weight:700}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--off-soft);color:var(--off)}
+.badge.ok{background:var(--work-soft);color:var(--work)}
+.badge.ng{background:var(--danger-soft);color:var(--danger)}
+.badge.wait{background:var(--break-soft);color:var(--break)}
+.card{padding:12px 0;border-top:1px solid var(--line)}
+.card:first-child{border-top:0;padding-top:0}
+.card p{margin:4px 0}
+.card .btns{display:flex;gap:8px;margin-top:8px}
+del{color:var(--muted)}
+textarea.csv{font-family:ui-monospace,Menlo,monospace;font-size:12px;min-height:180px;white-space:pre}
+footer{margin-top:28px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--btn);color:var(--btn-ink);padding:10px 18px;border-radius:999px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>勤怠モック</h1>
+      <div class="sub" id="roleLabel"></div>
+    </div>
+    <select class="user" id="userSelect" aria-label="ログインユーザーを切り替え"></select>
+  </header>
+  <div id="app"></div>
+  <footer>
+    <span>データはこの端末のブラウザにだけ保存されます</span>
+    <button class="small" id="resetBtn">初期データに戻す</button>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------- マスタ ----------
+const USERS = [
+  {id:'u1',name:'田中 太郎',dept:'営業部',role:'employee'},
+  {id:'u2',name:'高橋 美咲',dept:'営業部',role:'employee'},
+  {id:'u3',name:'伊藤 健',dept:'開発部',role:'employee'},
+  {id:'u4',name:'渡辺 里奈',dept:'開発部',role:'employee'},
+  {id:'m1',name:'佐藤 一郎',dept:'営業部',role:'manager'},
+  {id:'m2',name:'中村 恵',dept:'開発部',role:'manager'},
+  {id:'h1',name:'鈴木 花子',dept:'人事部',role:'hr'},
+];
+const ROLE_NAME = {employee:'一般社員',manager:'上長',hr:'人事'};
+const TYPE_NAME = {in:'出勤',out:'退勤',bs:'休憩開始',be:'休憩終了'};
+const KEY = 'kintai-mock-v1';
+
+// ---------- 状態 ----------
+let state = load() || seed();
+
+function load(){
+  try{ const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+function seed(){
+  // 今月の平日に決定論的な打刻データを生成
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const recs = [];
+  let n = 1;
+  const rnd = (s)=>{ const x = Math.sin(s)*10000; return x - Math.floor(x); };
+  USERS.filter(u=>u.role!=='hr').forEach((u,ui)=>{
+    for(let d=1; d<now.getDate(); d++){
+      const day = new Date(y,m,d); const w = day.getDay();
+      if(w===0||w===6) continue;
+      const r = rnd(ui*100+d);
+      const inMin = 8*60+50 + Math.floor(r*30);
+      const outMin = 17*60+45 + Math.floor(rnd(ui*100+d+7)*110);
+      const mk=(type,min)=>recs.push({id:'r'+(n++),userId:u.id,type,at:new Date(y,m,d,0,min).toISOString(),createdAt:new Date(y,m,d,0,min).toISOString(),source:'punch',ip:'10.0.1.'+(20+ui)});
+      mk('in',inMin); mk('bs',12*60); mk('be',13*60);
+      if(!(u.id==='u2' && d===now.getDate()-2)) mk('out',outMin); // 高橋さんは一昨日退勤忘れ
+    }
+  });
+  const corrections = [{
+    id:'c1', userId:'u2', recordId:null, type:'out',
+    at:new Date(y,m,now.getDate()-2,18,30).toISOString(),
+    reason:'退勤の打刻を忘れました。18:30に退社しています。',
+    status:'pending', requestedAt:new Date(y,m,now.getDate()-1,9,5).toISOString()
+  }];
+  const s = {records:recs, corrections, currentUser:'u1', nextId:n, seededAt:now.toISOString()};
+  return s;
+}
+
+// ---------- 共通 ----------
+const pad = v=>String(v).padStart(2,'0');
+const fmtT = iso=>{ const d=new Date(iso); return pad(d.getHours())+':'+pad(d.getMinutes()); };
+const fmtD = iso=>{ const d=new Date(iso); return (d.getMonth()+1)+'/'+d.getDate()+'('+'日月火水木金土'[d.getDay()]+')'; };
+const dateKey = iso=>{ const d=new Date(iso); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const monthKey = d=>d.getFullYear()+'-'+pad(d.getMonth()+1);
+const hm = min=>Math.floor(min/60)+':'+pad(min%60);
+const user = id=>USERS.find(u=>u.id===id);
+const me = ()=>user(state.currentUser);
+
+function effectiveRecords(){
+  const replaced = new Set(state.records.filter(r=>r.replaces).map(r=>r.replaces));
+  return state.records.filter(r=>!replaced.has(r.id)).sort((a,b)=>a.at.localeCompare(b.at));
+}
+function recordsOf(userId, month){
+  return effectiveRecords().filter(r=>r.userId===userId && (!month || dateKey(r.at).startsWith(month)));
+}
+function addRecord(userId,type,at,extra){
+  const r = Object.assign({id:'r'+(state.nextId++),userId,type,at,createdAt:new Date().toISOString(),source:'punch',ip:'10.0.1.9'},extra||{});
+  state.records.push(r); save(); return r;
+}
+function todayStatus(userId){
+  const rs = recordsOf(userId, dateKey(new Date().toISOString()));
+  const last = rs[rs.length-1];
+  if(!last) return 'none';
+  return {in:'work',be:'work',bs:'break',out:'off'}[last.type];
+}
+// 日別集計：出勤〜退勤 から休憩を引く
+function dailySummary(userId, month){
+  const byDay = {};
+  recordsOf(userId, month).forEach(r=>{ (byDay[dateKey(r.at)] = byDay[dateKey(r.at)]||[]).push(r); });
+  return Object.keys(byDay).sort().map(day=>{
+    const rs = byDay[day];
+    const inR = rs.find(r=>r.type==='in'), outR = [...rs].reverse().find(r=>r.type==='out');
+    let brk = 0, bsAt = null;
+    rs.forEach(r=>{ if(r.type==='bs') bsAt = new Date(r.at); if(r.type==='be' && bsAt){ brk += (new Date(r.at)-bsAt)/60000; bsAt=null; } });
+    const worked = (inR && outR) ? Math.max(0,(new Date(outR.at)-new Date(inR.at))/60000 - brk) : null;
+    return {day, in:inR?fmtT(inR.at):'', out:outR?fmtT(outR.at):'', brk:Math.round(brk), worked:worked===null?null:Math.round(worked), incomplete:!!inR && !outR && day!==dateKey(new Date().toISOString())};
+  });
+}
+function monthTotals(userId, month){
+  const days = dailySummary(userId, month);
+  return {days:days.length, minutes:days.reduce((s,d)=>s+(d.worked||0),0), incomplete:days.filter(d=>d.incomplete).length};
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1800); }
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- 描画 ----------
+let tab = 'punch';
+function render(){
+  const u = me();
+  document.getElementById('roleLabel').textContent = u.dept+'・'+ROLE_NAME[u.role];
+  const app = document.getElementById('app');
+  const tabs = u.role==='employee' ? [['punch','打刻'],['month','今月'],['fix','修正申請']]
+             : u.role==='manager' ? [['punch','打刻'],['approve','承認'],['dept','部署']]
+             : [['dept','全社'],['csv','CSV出力'],['log','打刻ログ']];
+  if(!tabs.some(t=>t[0]===tab)) tab = tabs[0][0];
+  let html = '<div class="tabs" role="tablist">'+tabs.map(t=>`<button role="tab" aria-selected="${t[0]===tab}" data-tab="${t[0]}">${t[1]}</button>`).join('')+'</div>';
+  html += {punch:viewPunch,month:viewMonth,fix:viewFix,approve:viewApprove,dept:viewDept,csv:viewCsv,log:viewLog}[tab](u);
+  app.innerHTML = html;
+  app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();});
+  bind(app);
+  tickClock();
+}
+
+function viewPunch(u){
+  const st = todayStatus(u.id);
+  const label = {none:['off','未出勤'],work:['work','勤務中'],break:['break','休憩中'],off:['off','退勤済み']}[st];
+  const btns = {
+    none:'<button class="primary" data-punch="in">出勤する</button>',
+    work:'<button data-punch="bs">休憩に入る</button><button class="primary" data-punch="out">退勤する</button>',
+    break:'<button class="primary" data-punch="be">休憩を終える</button>',
+    off:'<span class="done">本日の勤務は終了しました。打刻の間違いは「修正申請」から。</span>'
+  }[st];
+  const today = recordsOf(u.id, dateKey(new Date().toISOString()));
+  const list = today.length ? today.map(r=>`<div class="row"><span class="t">${fmtT(r.at)}</span><span class="type">${TYPE_NAME[r.type]}</span><span class="src">${r.source==='correction'?'修正承認済み':'Web打刻'}</span></div>`).join('')
+             : '<p class="empty">今日の打刻はまだありません。</p>';
+  const mt = monthTotals(u.id, monthKey(new Date()));
+  return `
+  <div class="hero">
+    <div class="date" id="heroDate"></div>
+    <div class="clock" id="heroClock"></div>
+    <span class="status ${label[0]}">${label[1]}</span>
+    <div class="actions">${btns}</div>
+  </div>
+  <section><h2>今日の打刻</h2><div class="panel">${list}</div></section>
+  <section><h2>今月</h2><div class="panel stats">
+    <div class="stat"><div class="n">${mt.days}</div><div class="l">出勤日数</div></div>
+    <div class="stat"><div class="n">${hm(mt.minutes)}</div><div class="l">実労働時間</div></div>
+    <div class="stat"><div class="n ${mt.incomplete?'warn':''}">${mt.incomplete}</div><div class="l">退勤未打刻</div></div>
+  </div></section>`;
+}
+
+function viewMonth(u){
+  const days = dailySummary(u.id, monthKey(new Date()));
+  const rows = days.map(d=>`<tr><td>${fmtD(d.day)}</td><td>${d.in}</td><td>${d.out||(d.incomplete?'<span class="warn">未打刻</span>':'')}</td><td class="num">${d.brk}分</td><td class="num">${d.worked===null?'—':hm(d.worked)}</td></tr>`).join('');
+  return `<section><h2>${new Date().getMonth()+1}月の勤務</h2><div class="panel scroll"><table><thead><tr><th>日付</th><th>出勤</th><th>退勤</th><th class="num">休憩</th><th class="num">実労働</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="empty">記録がありません</td></tr>'}</tbody></table></div></section>`;
+}
+
+function viewFix(u){
+  const month = monthKey(new Date());
+  const rs = recordsOf(u.id, month).slice().reverse();
+  const opts = '<option value="">（打刻を追加する）</option>'+rs.map(r=>`<option value="${r.id}">${fmtD(r.at)} ${fmtT(r.at)} ${TYPE_NAME[r.type]}</option>`).join('');
+  const mine = state.corrections.filter(c=>c.userId===u.id).slice().reverse();
+  const list = mine.length ? mine.map(c=>`<div class="card">
+      <p><span class="badge ${ {pending:'wait',approved:'ok',rejected:'ng'}[c.status] }">${ {pending:'承認待ち',approved:'承認済み',rejected:'却下'}[c.status] }</span></p>
+      <p>${c.recordId?'修正：':'追加：'}${fmtD(c.at)} ${fmtT(c.at)} ${TYPE_NAME[c.type]}</p>
+      <p class="src" style="color:var(--muted);font-size:13px">${esc(c.reason)}</p></div>`).join('') : '<p class="empty">申請はありません。</p>';
+  const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  return `
+  <section><h2>打刻の修正を申請する</h2><div class="panel">
+    <div class="field"><label for="fxRec">対象の打刻</label><select id="fxRec">${opts}</select></div>
+    <div class="field"><label for="fxType">正しい種別</label><select id="fxType"><option value="in">出勤</option><option value="out">退勤</option><option value="bs">休憩開始</option><option value="be">休憩終了</option></select></div>
+    <div class="field"><label for="fxAt">正しい日時</label><input id="fxAt" type="datetime-local" value="${d.toISOString().slice(0,16)}"></div>
+    <div class="field"><label for="fxReason">理由</label><textarea id="fxReason" rows="2" placeholder="例：退勤の打刻を忘れました"></textarea></div>
+    <div class="field"><button class="primary" id="fxSubmit">上長に申請する</button></div>
+  </div></section>
+  <section><h2>申請の履歴</h2><div class="panel">${list}</div></section>`;
+}
+
+function viewApprove(u){
+  const members = USERS.filter(x=>x.dept===u.dept && x.id!==u.id).map(x=>x.id);
+  const pend = state.corrections.filter(c=>c.status==='pending' && members.includes(c.userId));
+  const list = pend.length ? pend.map(c=>{
+    const orig = c.recordId ? state.records.find(r=>r.id===c.recordId) : null;
+    return `<div class="card">
+      <p><strong>${user(c.userId).name}</strong> <span class="badge wait">承認待ち</span></p>
+      ${orig?`<p><del>${fmtD(orig.at)} ${fmtT(orig.at)} ${TYPE_NAME[orig.type]}</del></p>`:''}
+      <p>→ ${fmtD(c.at)} ${fmtT(c.at)} ${TYPE_NAME[c.type]}</p>
+      <p style="color:var(--muted);font-size:13px">${esc(c.reason)}</p>
+      <div class="btns"><button class="primary small" data-approve="${c.id}">承認する</button><button class="small" data-reject="${c.id}">却下する</button></div>
+    </div>`; }).join('') : '<p class="empty">承認待ちの申請はありません。</p>';
+  return `<section><h2>${u.dept}の修正申請</h2><div class="panel">${list}</div></section>`;
+}
+
+function viewDept(u){
+  const month = monthKey(new Date());
+  const targets = u.role==='hr' ? USERS.filter(x=>x.role!=='hr') : USERS.filter(x=>x.dept===u.dept);
+  const rows = targets.map(x=>{ const t=monthTotals(x.id,month); return `<tr><td>${x.name}</td><td>${x.dept}</td><td class="num">${t.days}</td><td class="num">${hm(t.minutes)}</td><td class="num ${t.incomplete?'warn':''}">${t.incomplete}</td></tr>`; }).join('');
+  return `<section><h2>${u.role==='hr'?'全社':u.dept}・${new Date().getMonth()+1}月の集計</h2><div class="panel scroll"><table><thead><tr><th>氏名</th><th>部署</th><th class="num">出勤日</th><th class="num">実労働</th><th class="num">未打刻</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+
+function viewCsv(){
+  const month = monthKey(new Date());
+  const lines = ['社員ID,氏名,部署,日付,出勤,退勤,休憩分,実労働分'];
+  USERS.filter(x=>x.role!=='hr').forEach(x=>dailySummary(x.id,month).forEach(d=>lines.push([x.id,x.name,x.dept,d.day,d.in,d.out,d.brk,d.worked??''].join(','))));
+  return `<section><h2>給与ソフト向けCSV（${month}）</h2><div class="panel">
+    <p class="empty" style="margin:0 0 8px">実装ではここが .csv のダウンロードになります。列は給与ソフトの取込仕様に合わせて調整します。</p>
+    <textarea class="csv" id="csvText" readonly>${esc(lines.join('\n'))}</textarea>
+    <div class="field"><button class="primary small" id="csvCopy">コピーする</button></div>
+  </div></section>`;
+}
+
+function viewLog(){
+  const replaced = new Set(state.records.filter(r=>r.replaces).map(r=>r.replaces));
+  const rows = state.records.slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).slice(0,60).map(r=>{
+    const dead = replaced.has(r.id);
+    const cell = s=>dead?`<del>${s}</del>`:s;
+    return `<tr><td>${cell(r.id)}</td><td>${cell(user(r.userId).name)}</td><td>${cell(fmtD(r.at)+' '+fmtT(r.at))}</td><td>${cell(TYPE_NAME[r.type])}</td><td>${dead?'<span class="badge">修正で無効化</span>':r.source==='correction'?'<span class="badge ok">修正承認</span>':'<span class="badge">打刻</span>'}</td><td>${cell(r.ip)}</td></tr>`;
+  }).join('');
+  return `<section><h2>打刻ログ（直近60件）</h2><div class="panel">
+    <p class="empty" style="margin:0 0 8px">ログは追記のみで、更新・削除はしません。修正は新しい行を追加し、元の行は取り消し線で残ります。</p>
+    <div class="scroll"><table><thead><tr><th>ID</th><th>氏名</th><th>打刻時刻</th><th>種別</th><th>由来</th><th>IP</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div></section>`;
+}
+
+// ---------- イベント ----------
+function bind(app){
+  app.querySelectorAll('[data-punch]').forEach(b=>b.onclick=()=>{
+    addRecord(me().id, b.dataset.punch, new Date().toISOString());
+    toast(TYPE_NAME[b.dataset.punch]+'を記録しました'); render();
+  });
+  const fx = app.querySelector('#fxSubmit');
+  if(fx) fx.onclick=()=>{
+    const reason = app.querySelector('#fxReason').value.trim();
+    const at = app.querySelector('#fxAt').value;
+    if(!at){ toast('日時を入力してください'); return; }
+    if(!reason){ toast('理由を入力してください'); return; }
+    state.corrections.push({id:'c'+(state.nextId++),userId:me().id,recordId:app.querySelector('#fxRec').value||null,type:app.querySelector('#fxType').value,at:new Date(at).toISOString(),reason,status:'pending',requestedAt:new Date().toISOString()});
+    save(); toast('上長に申請しました'); render();
+  };
+  app.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>{
+    const c = state.corrections.find(x=>x.id===b.dataset.approve);
+    addRecord(c.userId, c.type, c.at, {source:'correction', replaces:c.recordId||undefined, correctionId:c.id, approvedBy:me().id});
+    c.status='approved'; c.decidedBy=me().id; c.decidedAt=new Date().toISOString();
+    save(); toast('承認しました'); render();
+  });
+  app.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>{
+    const c = state.corrections.find(x=>x.id===b.dataset.reject);
+    c.status='rejected'; c.decidedBy=me().id; c.decidedAt=new Date().toISOString();
+    save(); toast('却下しました'); render();
+  });
+  const cp = app.querySelector('#csvCopy');
+  if(cp) cp.onclick=async()=>{ const t=app.querySelector('#csvText'); t.select(); try{ await navigator.clipboard.writeText(t.value); toast('コピーしました'); }catch(e){ document.execCommand('copy'); toast('コピーしました'); } };
+}
+
+function tickClock(){
+  const c=document.getElementById('heroClock'), d=document.getElementById('heroDate');
+  if(!c) return;
+  const n=new Date();
+  c.innerHTML = pad(n.getHours())+':'+pad(n.getMinutes())+'<small>'+pad(n.getSeconds())+'</small>';
+  d.textContent = n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日（'+'日月火水木金土'[n.getDay()]+'）';
+}
+setInterval(tickClock,1000);
+
+const sel = document.getElementById('userSelect');
+sel.innerHTML = USERS.map(u=>`<option value="${u.id}">${u.name}（${ROLE_NAME[u.role]}）</option>`).join('');
+sel.value = state.currentUser;
+sel.onchange = ()=>{ state.currentUser = sel.value; save(); tab='punch'; render(); };
+document.getElementById('resetBtn').onclick = ()=>{ if(confirm('打刻データを初期状態に戻しますか？')){ state = seed(); save(); sel.value=state.currentUser; render(); toast('初期データに戻しました'); } };
+render();
+</script>
+</body>
+</html>
